@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyDD3o_vzkcWmw4-yDtuFZ0F4lioqWn8eU8"></script>
+    <script src="http://cooper-union-maps-proxy.herokuapp.com/js/draw.js"></script>
+
+    <script>
+      $.getJSON("http://cooper-union-instagram-proxy.herokuapp.com/search/user/berniesanders", function(response){
+        var user = response[0].username;
+        var id = response[0].id;
+        console.log(response);
+
+        $.getJSON("http://cooper-union-instagram-proxy.herokuapp.com/user/"+id+"/recent", function(response2){
+          console.log(response2);
+
+          var positionsOfBern = [];
+          var latestLoc = response2.length;
+          var positionsOfFeel = [];
+
+
+          for(var i=0; i<response2.length; i++){
+
+              if((response2[i].location) && (response2[i].location.latitude !== null)) {
+                  if(latestLoc > i){
+                    latestLoc = i;
+                  }
+                  var bernPosition = {
+                    "title":response2[i].caption.text,
+                    "map": new google.maps.LatLng(response2[i].location.latitude,response2[i].location.longitude),
+                    "link":response2[i].link,
+                    "html": "<img src='"+response2[i].images.standard_resolution+"' width='320px' />"
+                  }
+                  positionsOfBern.push(bernPosition);
+                }
+            }
+
+          $.getJSON("http://http://cooper-union-instagram-proxy.herokuapp.com/search/tag/feelthebern?count=33", function(response3){
+            console.log(response3);
+
+
+
+          });
+
+          var positions = positionsOfBern.concat(positionsOfFeel);
+          var mapOptions = {
+            zoom: 5,
+            center: new google.maps.LatLng(response2[latestLoc].location.latitude,response2[latestLoc].location.longitude)
+          };
+
+          draw('map', mapOptions, positionsOfBern);
+
+          });
+
+
+
+
+        // var howMany = 0;
+        // var positionsOfPhotos = [];
+        // for(var i=0; i<response.length; i++) {
+        //   // $("body").append("<img src="+response[i].images.thumbnail.url+" />");
+        //   if((response[i].location) && (response[i].location.latitude !== null)) {
+        //     howMany++;
+        //     var position = {
+        //       "title":response[i].caption.text,
+        //       "map": new google.maps.LatLng(response[i].location.latitude,response[i].location.longitude),
+        //       "link":response[i].link
+        //     }
+        //     positionsOfPhotos.push(position);
+        //   }
+        // }
+        // console.log(howMany)
+        // console.log(positionsOfPhotos)
+        // var mapOptions = {
+        //   zoom: 10,
+        //   center: new google.maps.LatLng(40.7293827,-73.9894186)
+        // };
+        // draw('map', mapOptions, positionsOfPhotos);
+      });
+    </script>
+    <style>
+    html, body, #map {
+        height:100%;
+        padding:0;
+        margin:0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+  </body>
+</html>
