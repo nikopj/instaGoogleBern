@@ -29,9 +29,15 @@
 
         //create all of the markers on the map
         for (i in positions) {
-
-          var image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true";
+          var image = "";
+          if(i == 0){
+            image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieStart.png?raw=true";
+          }
+          else{
+            image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true";
+          }
           // To add the marker to the map, use the 'map' property
+
           markers[i] = new google.maps.Marker({
               position: positions[i].map,
               map: map,
@@ -113,34 +119,32 @@
                   var bern = {lat: response2[i].location.latitude, lng: response2[i].location.longitude};
                   bernLine.push(bern)
                   positionsOfBern.push(bernPosition);
+
+                  $.getJSON("http://cooper-union-instagram-proxy.herokuapp.com/search/media?lat="+response2[i].location.latitude+"&lng="+response2[i].location.longitude+"&distance=5000", function(response3){
+                    //console.log(response3);
+                    //max_timestamp=4430790964
+                    //distance=5000
+
+                    for(var j=0; j<response3.length; j++){
+                      if(response3[j].tags.indexOf("feelthebern")>=0){
+                        var feelPosition = {
+                          "title": response3[j].caption.text,
+                          "map": new google.maps.LatLng(response3[j].location.latitude,response3[j].location.longitude),
+                          "link": response3[j].link,
+                          "html": "<img src='"+response3[j].images.standard_resolution.url+"' width='320px' />"
+                        }
+                        positionsOfFeel.push(feelPosition);
+                      }
+                    }
+
+                  });
+
               }
           }
-            console.log(validCounter);
-
-          // $.getJSON("http://http://cooper-union-instagram-proxy.herokuapp.com/search/tag/feelthebern", function(response3){
-          //   console.log(response3);
-          //
-          //   for(var i=0; i<response3.length; i++){
-          //
-          //       if((response3[i].location) && (response3[i].location.latitude !== null)) {
-          //
-          //           var feelPosition = {
-          //             "title":response3[i].caption.text,
-          //             "map": new google.maps.LatLng(response3[i].location.latitude,response3[i].location.longitude),
-          //             "link":response3[i].link,
-          //             "html": "<img src='"+response3[i].images.standard_resolution.url+"' width='320px' />"
-          //           }
-          //           positionsOfFeel.push(FeelPosition);
-          //         }
-          //     }
-          //
-          //
-          //   });
+          console.log(positionsOfFeel);
+          console.log(validCounter);
 
 
-
-
-          //var positions = positionsOfBern.concat(positionsOfFeel);
           var mapOptions = {
             zoom: 6,
             center: new google.maps.LatLng(response2[latestLoc].location.latitude,response2[latestLoc].location.longitude)
@@ -152,15 +156,49 @@
       });
     </script>
     <style>
-    html, body, #map {
+      .content{
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        width: 320px;
+      }
+      html, body, #map {
         height:100%;
         padding:0;
         margin:0;
       }
+      #map{
+
+      }
+      #key{
+        background-color: rgba(214, 214, 214, 0.7);
+        display: float;
+        position: absolute;
+        top: 10px;
+        right: 30px;
+        padding:5px;
+        border: 2px solid black;
+      }
+      h1{
+        padding: 0;
+        margin: 0;
+      }
+      h1 p{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+      }
+
+
     </style>
   </head>
   <body>
     <div id="map"></div>
-
+    <div id="key">
+      <h1><p>Bernie Sanders</p><p>Insta-Trail</p></h1>
+      <p>Key:</p>
+      <p><image src="https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieStart.png?raw=true"/>: latest Sanders position</p>
+      <p><image src="https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true"/>: other Sanders positions</p>
+    </div>
   </body>
 </html>
