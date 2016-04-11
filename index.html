@@ -1,11 +1,94 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-latest.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyDD3o_vzkcWmw4-yDtuFZ0F4lioqWn8eU8"></script>
-    <script src="http://cooper-union-maps-proxy.herokuapp.com/js/draw.js"></script>
-
     <script>
+
+      var draw = function(id, mapOptions, positions, linePositions) {
+
+        var map = new google.maps.Map(document.getElementById(id),
+          mapOptions);
+
+        var myLatlng = new google.maps.LatLng(40.7293, -73.9906);
+
+        var bernPath = new google.maps.Polyline({
+          path: linePositions,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+
+        bernPath.setMap(map);
+
+        //set up some empty arrays to use
+        var markers = [];
+        var infoWindows = [];
+        var popUps = [];
+
+        //create all of the markers on the map
+        for (i in positions) {
+          var image = "";
+          if(i == 0){
+            image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieStart.png?raw=true";
+          }
+          else{
+            image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true";
+          }
+          // To add the marker to the map, use the 'map' property
+
+          markers[i] = new google.maps.Marker({
+              position: positions[i].map,
+              map: map,
+              icon: image,
+              title:"The location of the " + positions[i].title
+              // icon: 'http://placehold.it/24x50' //url to images
+          });
+
+        }
+
+        //loop through the markers, and add pop-up windows to them
+        for (i in markers) {
+
+          //create a template with two placeholder to replace
+          var popUpTemplate = '<div class="content">{{html}}<a href="{{link}}">{{content}}</a></div>';
+
+          //replace the content placeholder
+          popUps[i] = popUpTemplate.replace('{{content}}', positions[i].title);
+
+          //replace the link placeholder
+          popUps[i] = popUps[i].replace('{{link}}', positions[i].link);
+
+          //replace the html placeholder
+
+          if(positions[i].html != undefined) {
+            popUps[i] = popUps[i].replace('{{html}}', positions[i].html);
+          } else {
+            popUps[i] = popUps[i].replace('{{html}}', '');
+          }
+
+          //create a new info window
+          infoWindows[i] = new google.maps.InfoWindow({
+            //the contents is the string-replaced template we created within this loop
+            content:popUps[i]
+          });
+
+          //when a marker is clicked on
+          google.maps.event.addListener(markers[i], 'click', function(innerKey) {
+            return function() {
+                //comment out the for loop persist each info window
+                for (j in markers) {
+                  infoWindows[j].close(map, markers[j]);
+                }
+
+                //open the infoWindow related to the marker clicked on
+                infoWindows[innerKey].open(map, markers[innerKey]);
+            }
+          }(i));
+        }
+      } //end of the initiazlize function
+
       $.getJSON("http://cooper-union-instagram-proxy.herokuapp.com/search/user/berniesanders", function(response){
         var user = response[0].username;
         var id = response[0].id;
@@ -17,78 +100,105 @@
           var positionsOfBern = [];
           var latestLoc = response2.length;
           var positionsOfFeel = [];
-
+          var validCounter = 0;
+          var bernLine = [];
 
           for(var i=0; i<response2.length; i++){
 
-              if((response2[i].location) && (response2[i].location.latitude !== null)) {
+              if((response2[i].location) && (response2[i].location.latitude !== null)){
                   if(latestLoc > i){
                     latestLoc = i;
                   }
+                  validCounter++;
                   var bernPosition = {
-                    "title":response2[i].caption.text,
+                    "title": response2[i].caption.text,
                     "map": new google.maps.LatLng(response2[i].location.latitude,response2[i].location.longitude),
-                    "link":response2[i].link,
-                    "html": "<img src='"+response2[i].images.standard_resolution+"' width='320px' />"
+                    "link": response2[i].link,
+                    "html": "<img src='"+response2[i].images.standard_resolution.url+"' width='320px' />"
                   }
+                  var bern = {lat: response2[i].location.latitude, lng: response2[i].location.longitude};
+                  bernLine.push(bern)
                   positionsOfBern.push(bernPosition);
-                }
-            }
 
-          $.getJSON("http://http://cooper-union-instagram-proxy.herokuapp.com/search/tag/feelthebern?count=33", function(response3){
-            console.log(response3);
+                  $.getJSON("http://cooper-union-instagram-proxy.herokuapp.com/search/media?lat="+response2[i].location.latitude+"&lng="+response2[i].location.longitude+"&distance=5000", function(response3){
+                    //console.log(response3);
+                    //max_timestamp=4430790964
+                    //distance=5000
 
-            
+                    for(var j=0; j<response3.length; j++){
+                      if(response3[j].tags.indexOf("feelthebern")>=0){
+                        var feelPosition = {
+                          "title": response3[j].caption.text,
+                          "map": new google.maps.LatLng(response3[j].location.latitude,response3[j].location.longitude),
+                          "link": response3[j].link,
+                          "html": "<img src='"+response3[j].images.standard_resolution.url+"' width='320px' />"
+                        }
+                        positionsOfFeel.push(feelPosition);
+                      }
+                    }
+
+                  });
+
+              }
+          }
+          console.log(positionsOfFeel);
+          console.log(validCounter);
 
 
-          });
-
-          var positions = positionsOfBern.concat(positionsOfFeel);
           var mapOptions = {
-            zoom: 5,
+            zoom: 6,
             center: new google.maps.LatLng(response2[latestLoc].location.latitude,response2[latestLoc].location.longitude)
           };
 
-          draw('map', mapOptions, positionsOfBern);
+          draw('map', mapOptions, positionsOfBern, bernLine);
 
           });
-
-
-
-
-        // var howMany = 0;
-        // var positionsOfPhotos = [];
-        // for(var i=0; i<response.length; i++) {
-        //   // $("body").append("<img src="+response[i].images.thumbnail.url+" />");
-        //   if((response[i].location) && (response[i].location.latitude !== null)) {
-        //     howMany++;
-        //     var position = {
-        //       "title":response[i].caption.text,
-        //       "map": new google.maps.LatLng(response[i].location.latitude,response[i].location.longitude),
-        //       "link":response[i].link
-        //     }
-        //     positionsOfPhotos.push(position);
-        //   }
-        // }
-        // console.log(howMany)
-        // console.log(positionsOfPhotos)
-        // var mapOptions = {
-        //   zoom: 10,
-        //   center: new google.maps.LatLng(40.7293827,-73.9894186)
-        // };
-        // draw('map', mapOptions, positionsOfPhotos);
       });
     </script>
     <style>
-    html, body, #map {
+      .content{
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        width: 320px;
+      }
+      html, body, #map {
         height:100%;
         padding:0;
         margin:0;
       }
+      #map{
+
+      }
+      #key{
+        background-color: rgba(214, 214, 214, 0.7);
+        display: float;
+        position: absolute;
+        top: 10px;
+        right: 30px;
+        padding:5px;
+        border: 2px solid black;
+      }
+      h1{
+        padding: 0;
+        margin: 0;
+      }
+      h1 p{
+        padding: 0;
+        margin: 0;
+        text-align: center;
+      }
+
+
     </style>
   </head>
   <body>
     <div id="map"></div>
-
+    <div id="key">
+      <h1><p>Bernie Sanders</p><p>Insta-Trail</p></h1>
+      <p>Key:</p>
+      <p><image src="https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieStart.png?raw=true"/>: latest Sanders position</p>
+      <p><image src="https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true"/>: other Sanders positions</p>
+    </div>
   </body>
 </html>
