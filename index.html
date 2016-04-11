@@ -3,8 +3,6 @@
   <head>
     <script src="https://code.jquery.com/jquery-latest.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyDD3o_vzkcWmw4-yDtuFZ0F4lioqWn8eU8"></script>
-    /*<script src="https://cooper-union-maps-proxy.herokuapp.com/js/draw.js"></script>*/
-
     <script>
 
       var draw = function(id, mapOptions, positions, linePositions) {
@@ -32,7 +30,7 @@
         //create all of the markers on the map
         for (i in positions) {
 
-          var image = "http://www.gilmerfreepress.net/images/upload1/BernieSanders.png";
+          var image = "https://github.com/nikopj/instaGoogleBern/blob/master/imgs/bernieMarker.png?raw=true";
           // To add the marker to the map, use the 'map' property
           markers[i] = new google.maps.Marker({
               position: positions[i].map,
